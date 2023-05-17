@@ -12,21 +12,44 @@ saveModal <- function(label){
   ))
 }
 
-save_graph <- function(db, save_label, graph){
-  id <- db |> dplyr::tbl("graphviz") |> dplyr::collect() |> nrow() + 1
+save_graph <- function(db, save_label, graph, overwrite){
   
   if(length(save_label) ==0 | nchar(save_label)==0){
-    showModal(modalDialog(title = "Error", "Label must not be null",
-                          footer = actionButton("save_error", "Dismiss")))
+    showModal(modalDialog(
+      title = "Error", "Label must not be null",
+      footer = actionButton("save_error", "Dismiss")
+    ))
   } else{
-    q <- glue::glue(
-      "INSERT INTO graphviz", 
-      "VALUES ({id}, '{save_label}', '{graph}');",
-      .sep = "\n"
-    )
-    DBI::dbExecute(db, q)
-    message <- ""
+    if(overwrite){
+      
+      id <- db |> dplyr::tbl("graphviz") |> 
+        dplyr::filter(.data$label == save_label) |>
+        dplyr::pull(id)
+      
+      if(id == 1)
+        showModal(
+          modalDialog(title = "Error", "Cannot overwrite protected graph.")
+        )
+      
+      q <- glue::glue(
+        "UPDATE `graphviz`",
+        "SET graph = '{graph}'",
+        "WHERE id = {id}", 
+        .sep = "\n"
+      )
+      DBI::dbExecute(db, q)
+      
+    } else{
+      id <- db |> dplyr::tbl("graphviz") |> dplyr::pull(id) |> max() +1
+      q <- glue::glue(
+        "INSERT INTO graphviz", 
+        "VALUES ({id}, '{save_label}', '{graph}');",
+        .sep = "\n"
+      )
+      DBI::dbExecute(db, q)
+    }
+    
     showModal(modalDialog(title = "Success", "Graph saved successfully"))
   }
-  message
+ 
 }

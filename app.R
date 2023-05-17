@@ -2,12 +2,13 @@ library(shiny)
 library(shinyAce)
 library(DiagrammeR)
 library(dbplyr)
-
+library(shinyFeedback)
 pool <- connect_db()
 onStop(function(){pool::poolClose(pool)})
 
 ui <- fluidPage(
   loadPanzoom("graph"),
+  useShinyFeedback(),
   tags$head(tags$style("#fullscreen-modal .modal-dialog {
     width: 100vw;
     max-width: none;
@@ -17,7 +18,7 @@ ui <- fluidPage(
     width = 4,
     actionButton("load", "Load"),
     actionButton("save", "Save"),
-    aceEditor(outputId = "ace",value = NULL ,mode =  "dot")
+    aceEditor(outputId = "ace",value = NULL, mode =  "dot")
   ),
   column(
     width = 8,
@@ -71,8 +72,21 @@ server <- function(input, output, session) {
   
   # Save graph 
   observeEvent(input$save, saveModal(values$label))
+  observeEvent(input$save_label, {
+    
+    if (input$save_label %in% values$graphtbl$label) {
+      showFeedbackWarning(
+        inputId = "save_label",
+        text = "Saving will overwrite existing graph."
+      )  
+    } else {
+      hideFeedback("save_label")
+    }
+    
+  })
   observeEvent(input$save_graph, {
-    save_graph(db, input$save_label, input$ace)
+    overwrite <- input$save_label %in% values$graphtbl$label
+    save_graph(db, input$save_label, input$ace, overwrite)
     values$graphtbl <- getGraphTbl(db)
   })
   observeEvent(input$save_error, saveModal())
