@@ -1,6 +1,6 @@
 loadPanzoom <- function(outputid){
   tags$head(
-    tags$script(src = "panzoom.min.js", name = "pz", query = "#graph")
+    tags$script(src = "panzoom.min.js", name = "pz", query = glue::glue("#{outputid}"))
   )
 }
 
@@ -16,8 +16,18 @@ panzoomOutput <- function(outputid){
   )
 }
 
-addPanzoomButtonsJS <- function(){
-  js <- "Array.from(
+addPanzoomButtons <- function(){
+  tags$div(
+    class = "button-container", 
+    shinyWidgets::actionGroupButtons(
+      c("zoomIn", "zoomOut"),
+      c("+", "-")
+    )
+  )
+}
+
+addPanzoomButtonsJS <- function(outputid){
+  js <- glue::glue("Array.from(
     document.querySelectorAll('.button-container button')
   ).forEach(attachClickHandler)
   
@@ -27,7 +37,7 @@ addPanzoomButtonsJS <- function(){
   
   function handleClick(e) {
     e.preventDefault();
-    let container = document.querySelector('#graph > svg');
+    let container = document.querySelector('#<<outputid>> > svg');
     let rect = container.getBBox();
     let cx = rect.x + rect.width/2;
     let cy = rect.y + rect.height/2;
@@ -36,7 +46,7 @@ addPanzoomButtonsJS <- function(){
     pz.smoothZoom(cx, cy, zoomBy);
     // Or if you don't need animation, usee this:
       // pz.zoomTo(cx, cy, zoomBy);
-    }"
+    }", .open = "<<", .close = ">>")
   
     tags$script(HTML(js))
 }

@@ -28,3 +28,5 @@ For information on how to access and set environment variables see `?Startup`.
 
 The app uses panzoom javascript library to move and zoom into the graph. More information is available at the panzoom github page (https://github.com/anvaka/panzoom).
 
+Zoom in buttons follow the approach in anvaka/panzoom. 
+
