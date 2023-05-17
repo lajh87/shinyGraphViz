@@ -6,9 +6,7 @@ pool <- connect_db()
 onStop(function(){pool::poolClose(pool)})
 
 ui <- fluidPage(
-  tags$head(
-    includeScript("www/panzoom.min.js")
-  ),
+  loadPanzoom(),
   column(
     width = 4,
     aceEditor("ace", "digraph{a->b}", "dot")
@@ -16,14 +14,7 @@ ui <- fluidPage(
   column(
     width = 8,
     grVizOutput("graph"),
-    tags$script(
-      HTML(
-        "
-        var element = document.querySelector('#graph');
-        panzoom(element);
-        "
-      )
-    )
+    panzoomOutput("graph")
   )
 )
 
