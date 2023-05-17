@@ -1,6 +1,7 @@
 library(shiny)
 library(shinyAce)
 library(DiagrammeR)
+library(dbplyr)
 
 pool <- connect_db()
 onStop(function(){pool::poolClose(pool)})
