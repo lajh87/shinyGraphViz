@@ -10,6 +10,7 @@ ui <- fluidPage(
   column(
     width = 4,
     actionButton("load", "Load"),
+    actionButton("save", "Save"),
     aceEditor(outputId = "ace",value = NULL ,mode =  "dot")
   ),
   column(
@@ -23,31 +24,36 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  # Connect to database and set initial values
+  # Connect to database
   db <- pool::poolCheckout(pool)
-  values <- reactiveValues(graph = "digraph{a->b}")
+  onStop(function() pool::poolReturn(db))
+  
+  # Set initial values
+  values <- reactiveValues(
+    graph = "digraph{a->b}",
+    graphtbl = getGraphTbl(db)
+  )
   
   # Display graph and observe change to editor
   output$graph <- renderGrViz(grViz(input$ace))
+  observe(updateAceEditor(session, "ace", values$graph))
   
-  observe({
-    updateAceEditor(
-      session, 
-      "ace", 
-      values$graph
-    )
-  })
-  
-  # Load Graph ----
+  # Load graph 
   observeEvent(input$load,loadModal())
-  output$graphtbl <- DT::renderDataTable(graphDT(db))
+  output$graphtbl <- DT::renderDataTable(graphDT(values$graphtbl))
    
   observeEvent(input$load_graph,{
     values$graph <- getGraph(db, input$graphtbl_rows_selected)
   })
   
-  # Return checkout connection object
-  onStop(function() pool::poolReturn(db))
+  # Save graph 
+  observeEvent(input$save, saveModal())
+  observeEvent(input$save_graph, {
+    save_graph(db, input$save_label, input$ace)
+    values$graphtbl <- getGraphTbl(db)
+  })
+  observeEvent(input$save_error, saveModal())
+  
 }
 
 shinyApp(ui, server)

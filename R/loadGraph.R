@@ -13,11 +13,8 @@ loadModal <- function(){
   )
 }
 
-graphDT <- function(db){
-  DT::datatable(db |>
-                  dplyr::tbl("graphviz") |>
-                  dplyr::select(id, label) |>
-                  dplyr::collect(),
+graphDT <- function(df){
+  DT::datatable(df,
                 selection = "single",
                 options = list(dom = "ftp",
                                autoWidth = TRUE,
@@ -27,6 +24,13 @@ graphDT <- function(db){
                                )),
                 rownames = FALSE
   )
+}
+
+getGraphTbl <- function(db){
+  db |>
+    dplyr::tbl("graphviz") |>
+    dplyr::select(id, label) |>
+    dplyr::collect()
 }
 
 getGraph <- function(db, selected_id){
