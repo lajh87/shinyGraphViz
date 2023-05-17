@@ -1,5 +1,5 @@
 
-graph <- paste(readLines("data-raw/git.gv"), collapse = "\n")
+
 source("R/connect_db.R")
 db <- connect_db()
 DBI::dbExecute(db, "DROP TABLE IF EXISTS `graphviz`;")
@@ -15,6 +15,6 @@ q <- paste(
   sep = " "
 )
 DBI::dbExecute(db, q)
-
+graph <- paste(readLines("data-raw/git.gv"), collapse = "\n")
 q <- glue::glue("INSERT INTO graphviz VALUES (1, 'git', '{graph}')")
 DBI::dbExecute(db, q)
