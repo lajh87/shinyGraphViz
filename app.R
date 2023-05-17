@@ -22,7 +22,6 @@ server <- function(input, output, session) {
     grViz(input$ace)
   })
 
-  
 }
 
 shinyApp(ui, server)
