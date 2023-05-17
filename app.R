@@ -10,6 +10,7 @@ ui <- fluidPage(
   column(
     width = 4,
     actionButton("load", "Load"),
+    actionButton("save", "Save"),
     aceEditor(outputId = "ace",value = NULL ,mode =  "dot")
   ),
   column(
@@ -25,7 +26,8 @@ server <- function(input, output, session) {
   
   # Connect to database and set initial values
   db <- pool::poolCheckout(pool)
-  values <- reactiveValues(graph = "digraph{a->b}")
+  values <- reactiveValues(graph = "digraph{a->b}",
+                           error = "")
   
   # Display graph and observe change to editor
   output$graph <- renderGrViz(grViz(input$ace))
@@ -45,6 +47,12 @@ server <- function(input, output, session) {
   observeEvent(input$load_graph,{
     values$graph <- getGraph(db, input$graphtbl_rows_selected)
   })
+  
+  # Save Graph ----
+  observeEvent(input$save, saveModal())
+  observeEvent(input$save_graph, save_graph(db, input$save_label, input$ace))
+  observeEvent(input$save_error, saveModal())
+  
   
   # Return checkout connection object
   onStop(function() pool::poolReturn(db))
