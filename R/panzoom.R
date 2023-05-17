@@ -20,8 +20,8 @@ addPanzoomButtons <- function(){
   tags$div(
     class = "button-container", 
     shinyWidgets::actionGroupButtons(
-      c("zoomIn", "zoomOut"),
-      c("+", "-")
+      c("zoomIn", "zoomOut", "fullScreen"),
+      c("+", "-", list(icon("expand")))
     )
   )
 }

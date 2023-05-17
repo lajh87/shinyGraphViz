@@ -1,8 +1,9 @@
-saveModal <- function(){
+saveModal <- function(label){
+  
   showModal(modalDialog(
     title = "Save Current Graph",
     tagList(
-      textInput("save_label", "Label")
+      textInput(inputId = "save_label", label = "Label",value = label)
     ),
     footer = tagList(
       actionButton("save_graph", "Save"),

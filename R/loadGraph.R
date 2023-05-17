@@ -5,24 +5,12 @@ loadModal <- function(){
       DT::DTOutput("graphtbl"),
       footer = tagList(
         actionButton("load_graph", "Load"),
+        actionButton("delete_graph", "Delete"),
         modalButton("Close")
       ),
       easyClose = TRUE,
       FADE = TRUE
     )
-  )
-}
-
-graphDT <- function(df){
-  DT::datatable(df,
-                selection = "single",
-                options = list(dom = "ftp",
-                               autoWidth = TRUE,
-                               columnDefs = list(
-                                 list(width = '25px', targets = c(0)),
-                                 list(width = '500px', targets = c(1))
-                               )),
-                rownames = FALSE
   )
 }
 
@@ -33,9 +21,29 @@ getGraphTbl <- function(db){
     dplyr::collect()
 }
 
-getGraph <- function(db, selected_id){
-  new_graph <- db |>
+getLabel <- function(db, row_id){
+  db |> 
     dplyr::tbl("graphviz") |>
-    dplyr::filter(.data$id == selected_id) |>
+    dplyr::filter(dplyr::row_number()== row_id) |>
+    dplyr::pull(.data$label)
+}
+
+getGraph <- function(db, row_id){
+  db |>
+    dplyr::tbl("graphviz") |>
+    dplyr::filter(dplyr::row_number() == row_id) |>
     dplyr::pull(graph)
+}
+
+deleteGraph <- function(db, row_id){
+  
+  selected_id <- db |>
+    dplyr::tbl("graphviz") |>
+    dplyr::filter(dplyr::row_number() == row_id) |>
+    dplyr::pull(.data$id)
+  
+  q <- glue::glue(
+    "DELETE FROM graphviz WHERE id = {selected_id};"
+  )
+  DBI::dbExecute(db, q)
 }
