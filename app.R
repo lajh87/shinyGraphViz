@@ -1,12 +1,12 @@
 library(shiny)
 library(shinyAce)
 library(DiagrammeR)
-
-pool <- connect_db()
-onStop(function(){pool::poolClose(pool)})
+# https://stackoverflow.com/questions/70381005/how-to-add-controls-in-panzoom-functionality-in-shiny-app
+# pool <- connect_db()
+# onStop(function(){pool::poolClose(pool)})
 
 ui <- fluidPage(
-  loadPanzoom(),
+  loadPanzoom("graph"),
   column(
     width = 4,
     aceEditor("ace", "digraph{a->b}", "dot")
@@ -14,7 +14,14 @@ ui <- fluidPage(
   column(
     width = 8,
     grVizOutput("graph"),
-    panzoomOutput("graph")
+    panzoomOutput("graph"),
+    HTML(
+      "<div class='button-container'>
+    <a href='#' class='button' id='zoomIn'>+</a>
+         <a href='#' class='button' id='zoomOut'>-</a>
+           </div>"
+    ),
+    addPanzoomButtonsJS()
   )
 )
 
