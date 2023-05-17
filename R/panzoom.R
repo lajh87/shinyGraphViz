@@ -18,7 +18,7 @@ panzoomOutput <- function(outputid){
 
 addPanzoomButtonsJS <- function(){
   js <- "Array.from(
-    document.querySelectorAll('.button-container a.button')
+    document.querySelectorAll('.button-container button')
   ).forEach(attachClickHandler)
   
   function attachClickHandler(el) {

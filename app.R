@@ -15,11 +15,12 @@ ui <- fluidPage(
     width = 8,
     grVizOutput("graph"),
     panzoomOutput("graph"),
-    HTML(
-      "<div class='button-container'>
-    <a href='#' class='button' id='zoomIn'>+</a>
-         <a href='#' class='button' id='zoomOut'>-</a>
-           </div>"
+    tags$div(
+      class = "button-container", 
+      shinyWidgets::actionGroupButtons(
+        c("zoomIn", "zoomOut"),
+        c("+", "-")
+      )
     ),
     addPanzoomButtonsJS()
   )
