@@ -9,11 +9,6 @@ onStop(function(){pool::poolClose(pool)})
 ui <- fluidPage(
   loadPanzoom("graph"),
   useShinyFeedback(),
-  tags$head(tags$style("#fullscreen-modal .modal-dialog {
-    width: 100vw;
-    max-width: none;
-    height: 100% !important;
-    margin: 0;}")),
   column(
     width = 4,
     actionButton("load", "Load"),

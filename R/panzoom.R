@@ -8,9 +8,9 @@ panzoomOutput <- function(outputid){
   tags$script(
     HTML(
       glue::glue(
-        "var element = document.querySelector('#{outputid}');",
+        "var element = document.querySelector('#{{outputid}}');",
         "panzoom(element);", 
-        .sep = "\n"
+        .sep = "\n",.open = "{{", .close = "}}"
         )
     )
   )
@@ -20,8 +20,8 @@ addPanzoomButtons <- function(){
   tags$div(
     class = "button-container", 
     shinyWidgets::actionGroupButtons(
-      c("zoomIn", "zoomOut", "fullScreen"),
-      c("+", "-", list(icon("expand")))
+      c("zoomIn", "zoomOut"),
+      c("+", "-")
     )
   )
 }
