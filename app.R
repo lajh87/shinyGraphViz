@@ -1,90 +1,142 @@
 library(shiny)
-library(shinyAce)
-library(DiagrammeR)
-library(dbplyr)
-library(shinyFeedback)
-pool <- connect_db()
-onStop(function(){pool::poolClose(pool)})
 
 ui <- fluidPage(
-  loadPanzoom("graph"),
-  useShinyFeedback(),
-  column(
-    width = 4,
-    actionButton("load", "Load"),
-    actionButton("save", "Save"),
-    aceEditor(outputId = "ace",value = NULL, mode =  "dot")
+  loadPanzoom(),
+  includeCSS("www/style.css"),
+  includeScript("www/panzoom-shiny.js"),
+  fluidRow(
+      column(
+        width = 12,
+        actionButton("info", "Info", icon("info")),
+        actionButton("save", "Save"),
+        actionButton("Load", "Load"),
+        HTML("&nbsp"),
+        div(style="display: inline-block;vertical-align:middle;",tags$b("Engine: ")),
+        div(style="display: inline-block;vertical-align:top; width: 150px;",
+            selectInput("engine", NULL, c("dot", "neato", "circo", "twopi"))),
+      shinyWidgets::dropdownButton(
+        "You are not logged in.",
+        inline = TRUE,
+        right = TRUE,
+        icon = icon("user"),
+        circle = FALSE
+      )
+      )
   ),
-  column(
-    width = 8,
-    grVizOutput("graph"),
-    panzoomOutput("graph"),
-    addPanzoomButtons(),
-    addPanzoomButtonsJS("graph")
-  )
-)
-
+  fluidRow(
+    column(
+      width = 3,
+      shinyAce::aceEditor(
+        outputId = "ace", 
+        value = "digraph g{a->b}", 
+        mode = "dot",
+        height = "90vh"
+      )
+    ),
+    column(
+      width = 9,
+      div(
+        id = "graph-container",
+        style = "overflow: hidden;",
+        DiagrammeR::grVizOutput("graph", height = "90vh"),
+        tags$script(
+          HTML('pz = panzoom($("#graph")[0], {
+            bounds: true,
+            zoomDoubleClickSpeed: 1
+        }); pz.zoomAbs(0, 0, 0.7);')
+        ),
+        tags$div(
+          style = "position: absolute; right: 30px; top: 5px;",
+          downloadButton(
+            outputId = "download_plot",
+            label = NULL,
+            icon = icon("download")
+          )
+        ),
+        tags$style(
+          type = 'text/css',
+          paste('.modal-dialog { width: 100% !important; }',
+                '.modal-body {height: 90vh !important;}', sep = "\n")
+        ),
+        tags$div(
+          style = "position: absolute; right: 30px; top: 50px;",
+          actionButton(
+            inputId = "fullscreen",
+            label = NULL,
+            icon = icon("expand")
+          )
+        ),
+        
+        tags$div(
+          style = "position: absolute; right: 30px; bottom: 79px;",
+          actionButton(
+            inputId = "zoomin",
+            label = NULL,
+            icon = icon("plus")
+          )
+        ),
+        tags$div(
+          style = "position: absolute; right: 30px; bottom: 42px;",
+          actionButton(
+            inputId = "reset",
+            label = NULL,
+            icon = icon("arrows-alt")
+          )
+        ),
+        tags$div(
+          style = "position: absolute; right: 30px; bottom: 5px;",
+          actionButton(
+            inputId = "zoomout",
+            label = NULL,
+            icon = icon("minus")
+          )
+        ),
+        
+      )
+        )
+      )
+    )
+  
 server <- function(input, output, session) {
   
-  # Connect to database
-  db <- pool::poolCheckout(pool)
-  onStop(function() pool::poolReturn(db))
-  
-  # Set initial values
   values <- reactiveValues(
-    graph = "digraph{a->b}",
-    graphtbl = getGraphTbl(db),
-    label = NA
+    graph = "digraph g{a->b}" 
   )
   
-  # Display graph and observe change to editor
-  output$graph <- renderGrViz(grViz(input$ace))
-  observe(updateAceEditor(session, "ace", values$graph))
-  observeEvent(input$fullScreen,{
-    showModal(div(id="fullscreen-modal",modalDialog(grViz(values$graph))))
+  output$graph <- DiagrammeR::renderGrViz({
+    DiagrammeR::grViz(values$graph)
   })
   
-  # Load graph 
-  observeEvent(input$load,loadModal())
-  output$graphtbl <- DT::renderDataTable(graphDT(values$graphtbl))
-   
-  observeEvent(input$load_graph,{
-    req(input$graphtbl_rows_selected)
-    values$graph <- getGraph(db, input$graphtbl_rows_selected)
-    values$label <- getLabel(db, input$graphtbl_rows_selected)
+  observeEvent(input$ace,{
+    values$graph <- input$ace
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$zoomin,{
+    session$sendCustomMessage("panzoom_handler","zoomIn")
+  }, ignoreInit = TRUE)
+  observeEvent(input$zoomout,{
+    session$sendCustomMessage("panzoom_handler","zoomOut")
+  }, ignoreInit = TRUE)
+  observeEvent(input$reset,{
+    session$sendCustomMessage("panzoom_reset","reset")
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$fullscreen,{
+    showModal(
+      modalDialog(easyClose = TRUE,
+                  DiagrammeR::grViz(values$graph, height = "100%", width = "100%"))
+    )
   })
   
-  # Delete graph
-  observeEvent(input$delete_graph,{
-    req(input$graphtbl_rows_selected)
-    if(input$graphtbl_rows_selected==1){
-      showModal(modalDialog(title = "Error", "Cannot delete protected graph."))
-    } else{
-      deleteGraph(db, input$graphtbl_rows_selected)
-      values$graphtbl <- getGraphTbl(db)
+  output$download_plot <- downloadHandler(
+    filename = function(){
+      paste0(Sys.time(),"plot.svg")
+    }, content = function(file){
+      gv <- DiagrammeR::grViz(values$graph, height = "100%", width = "100%")
+      svg <- DiagrammeRsvg::export_svg(gv)
+      write(svg, file)
     }
-  })
-  
-  # Save graph 
-  observeEvent(input$save, saveModal(values$label))
-  observeEvent(input$save_label, {
-    
-    if (input$save_label %in% values$graphtbl$label) {
-      showFeedbackWarning(
-        inputId = "save_label",
-        text = "Saving will overwrite existing graph."
-      )  
-    } else {
-      hideFeedback("save_label")
-    }
-    
-  })
-  observeEvent(input$save_graph, {
-    overwrite <- input$save_label %in% values$graphtbl$label
-    save_graph(db, input$save_label, input$ace, overwrite)
-    values$graphtbl <- getGraphTbl(db)
-  })
-  observeEvent(input$save_error, saveModal())
+  )
   
 }
 

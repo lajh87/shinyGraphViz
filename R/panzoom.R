@@ -1,6 +1,6 @@
-loadPanzoom <- function(outputid){
+loadPanzoom <- function(){
   tags$head(
-    tags$script(src = "panzoom.min.js", name = "pz", query = glue::glue("#{outputid}"))
+    tags$script(src = "panzoom.min.js")
   )
 }
 
@@ -8,27 +8,30 @@ panzoomOutput <- function(outputid){
   tags$script(
     HTML(
       glue::glue(
-        "var element = document.querySelector('#{{outputid}}');",
-        "panzoom(element);", 
+        "panzoom($(#{{outputid}})[0], {
+          bounds: true,
+          boundsPadding: 0.1
+          });;",
         .sep = "\n",.open = "{{", .close = "}}"
         )
     )
   )
 }
 
-addPanzoomButtons <- function(){
+addZoomButtons <- function(){
   tags$div(
-    class = "button-container", 
+    class = "zoom-button-container", 
     shinyWidgets::actionGroupButtons(
       c("zoomIn", "zoomOut"),
-      c("+", "-")
+      c("+", "-"),
+      direction = "vertical"
     )
   )
 }
 
-addPanzoomButtonsJS <- function(outputid){
+addZoomButtonsJS <- function(outputid){
   js <- glue::glue("Array.from(
-    document.querySelectorAll('.button-container button')
+    document.querySelectorAll('.zoom-button-container button')
   ).forEach(attachClickHandler)
   
   function attachClickHandler(el) {

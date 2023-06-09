@@ -7,6 +7,7 @@ connect_db <- function(
     ){
   pool::dbPool(
     RMySQL::MySQL(),
+    maxSize = 5,
     dbname = dbname,
     host = host,
     port = as.numeric(port),
