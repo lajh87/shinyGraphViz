@@ -15,5 +15,5 @@ function panzoom_zoom(message){
 
 function panzoom_reset(x){
   pz.moveTo(0, 0);
-  pz.zoomAbs(0, 0, 1);
+  pz.zoomAbs(0, 0, 0.9);
 }

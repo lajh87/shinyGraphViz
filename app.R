@@ -1,5 +1,16 @@
 library(shiny)
 
+graphviz <- DBI::dbConnect(
+  odbc::odbc(),
+  driver = "MySQL ODBC 8.0 Unicode Driver",
+  database = "graphviz",
+  UID    = "lheley",
+  PWD    = Sys.getenv("mysql_pw"),
+  host = "localhost",
+  port = 3306,
+)
+
+
 ui <- fluidPage(
   loadPanzoom(),
   includeCSS("www/style.css"),
@@ -7,22 +18,22 @@ ui <- fluidPage(
   fluidRow(
       column(
         width = 12,
-        actionButton("info", "Info", icon("info")),
-        actionButton("save", "Save"),
-        actionButton("Load", "Load"),
-        HTML("&nbsp"),
-        div(style="display: inline-block;vertical-align:middle;",tags$b("Engine: ")),
-        div(style="display: inline-block;vertical-align:top; width: 150px;",
-            selectInput("engine", NULL, c("dot", "neato", "circo", "twopi"))),
-      shinyWidgets::dropdownButton(
-        "You are not logged in.",
-        inline = TRUE,
-        right = TRUE,
-        icon = icon("user"),
-        circle = FALSE
-      )
+        shinyWidgets::dropdownButton(
+          "You are not logged in.",
+          inline = TRUE,
+          right = FALSE,
+          icon = icon("user"),
+          circle = FALSE,
+          text = "Login"
+        ),
+        actionButton("new", NULL, title = "New", icon("file")),
+        actionButton("save", NULL, title = "Save", icon("save")),
+        actionButton("load", NULL, title = "Load", icon("folder-open")),
+        HTML("&nbsp"),HTML("&nbsp"),
+        textOutput("filename", inline = TRUE)
       )
   ),
+
   fluidRow(
     column(
       width = 3,
@@ -30,7 +41,7 @@ ui <- fluidPage(
         outputId = "ace", 
         value = "digraph g{a->b}", 
         mode = "dot",
-        height = "90vh"
+        height = "85vh"
       )
     ),
     column(
@@ -91,6 +102,10 @@ ui <- fluidPage(
             icon = icon("minus")
           )
         ),
+        tags$div(
+          style = "position: absolute; right: 100px; bottom: 5px;",
+          tags$em(tags$a(href = "", "Defence Economics"), "| Graphviz")
+        )
         
       )
         )
@@ -104,6 +119,7 @@ server <- function(input, output, session) {
   )
   
   output$graph <- DiagrammeR::renderGrViz({
+    message(input$engine)
     DiagrammeR::grViz(values$graph)
   })
   
@@ -137,6 +153,8 @@ server <- function(input, output, session) {
       write(svg, file)
     }
   )
+  
+  output$filename <- renderText({"untitled.gv"})
   
 }
 
