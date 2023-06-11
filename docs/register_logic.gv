@@ -1,0 +1,25 @@
+digraph register_logic{
+  graph[rankdir = LR label = "Register Logic" labelloc = t]
+  node[shape = rectangle]
+  
+  enter_credentials -> valid_data
+  valid_data:e -> store_credentials[label = "Yes"]
+  valid_data:s -> enter_credentials[label = "No"]
+  valid_data:e -> associate_userid[label = "Yes"]
+  associate_userid -> email_user
+  email_user -> user_url_query
+  user_url_query -> validate_token
+  associate_userid -> store_credentials
+  store_credentials -> validate_token
+  validate_token -> valid_token
+  valid_token:e -> verify_user[label = "Yes"]
+  valid_token:s -> destroy_token:n[label = "No"]
+  destroy_token:s -> create_new_token:n[dir = ""]
+  create_new_token -> associate_userid
+  
+  valid_data[shape = diamond]
+  valid_token[shape = diamond]
+  
+  {rank = same; email_user; store_credentials}
+  {rank = same; valid_token; create_new_token; destroy_token}
+}
