@@ -10,8 +10,6 @@ ui <- fluidPage(
   actionButton("save", "Save cookie"),
   actionButton("remove", "remove cookie"),
   uiOutput("name_get")
-
-
 )
 
 server <- function(input, output, session) {
