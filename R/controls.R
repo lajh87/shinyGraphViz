@@ -14,9 +14,16 @@ controlsUI <- function(id) {
     title = "Save"
   ),
   actionButton(
+    inputId = "saveas",
+    label = NULL,
+    icon = icon("cloud-upload"),
+    class = "fa fa-inverse",
+    title = "Save As"
+  ),
+  actionButton(
     inputId = ns("load"),
     label = NULL,
-    icon = icon("folder-open"),
+    icon = icon("cloud-download"),
     title = "Load"
   ),
   HTML("&nbsp"),
