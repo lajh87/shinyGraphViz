@@ -25,7 +25,8 @@ shinyGraphViz <- function(){
 
     values <- reactiveValues()
 
-    observeEvent(input$cookies,{
+    observeEvent(input$cookies, {
+
       if(is.null(input$cookies$token)){
         # If there is no cookie in the browswer then create one and log in database.
         selector <- sodium::random(6) |> sodium::bin2hex()
@@ -41,43 +42,31 @@ shinyGraphViz <- function(){
         session$sendCustomMessage("cookie-set", msg)
         DBI::dbExecute(pool, glue::glue(
           "INSERT INTO token",
-          "VALUES('{selector}', '{hashed_validator}', '0' {Sys.Date()+90})",
+          "VALUES('{selector}', '{hashed_validator}', '0', '{Sys.Date()+90}')",
           .sep = "\n"
         ))
       } else{
-        # If there is a cookie then store it to be passed to other modules.
         values$token <- input$cookies$token
-
-        # Check cookie has not expired
         split_token <- stringr::str_split(values$token, ":") %>% unlist()
+
         expiry_date <- pool %>% dplyr::tbl("token") %>%
           dplyr::collect() %>%
           dplyr::filter(.data$selector == split_token[1]) %>%
           dplyr::pull(.data$expires)
-        if(length(expiry_date) == 0) return(NULL)
-        if(as.Date(expiry_date) < Sys.Date()){
-          ## if it has remove cookie from browser and database
-          session$sendCustomMessage("cookie-remove", list(name = "token"))
-          DBI::dbExecute(pool, glue::glue(
-            "DELETE FROM token WHERE selector = '{split_token[1]}';"
-            ))
 
-          ## Generate new cookie and send to browser and database.
-          selector <- sodium::random(6) |> sodium::bin2hex()
-          validator <- sodium::random(32) |> sodium::bin2hex()
-          values$token <- paste(selector, validator, sep  = ":")
-          msg <- list(
-            name = "token",
-            value = values$token
-          )
-          session$sendCustomMessage("cookie-set", msg)
-          DBI::dbExecute(pool, glue::glue(
-            "INSERT INTO token",
-            "VALUES('{selector}', '{hashed_validator}', '0' {Sys.Date()+90})",
-            .sep = "\n"
-          ))
+        if(length(expiry_date) == 0){
+          session$sendCustomMessage("cookie-remove", list(name = "token"))
+        } else{
+          if(as.Date(expiry_date) < Sys.Date()){
+            ## if it has remove cookie from browser and database
+            session$sendCustomMessage("cookie-remove", list(name = "token"))
+            DBI::dbExecute(pool, glue::glue(
+              "DELETE FROM token WHERE selector = '{split_token[1]}';"
+            ))
+          }
         }
       }
+
     }, ignoreInit = FALSE, once = TRUE)
 
     pool <- pool::dbPool(
@@ -103,10 +92,30 @@ shinyGraphViz <- function(){
         token = values$token,
         parent = session
       )
-      controls <- callModule(controlsServer, id = "controls")
-      editor <- callModule(editorServer, id = "editor")
-      graph <- callModule(graphServer,  id = "graph", editor = editor)
+
+      editor <- callModule(
+        module = editorServer,
+        id = "editor",
+        controls = controls
+      )
+
+      controls <- callModule(
+        module = controlsServer,
+        id = "controls",
+        pool = pool,
+        token = values$token,
+        login = login,
+        editor = editor
+        )
+
+      graph <- callModule(
+        module = graphServer,
+        id = "graph",
+        editor = editor
+        )
     })
+
+
   }
 
   shinyApp(ui, server)

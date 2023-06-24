@@ -9,12 +9,12 @@ editorUI <- function(id) {
   )
 }
 
-editorServer<- function(input, output, session) {
-  
+editorServer<- function(input, output, session, controls) {
+
   values <- reactiveValues(
     graph = "digraph {a->b}"
   )
-  
+
   observe({
     shinyAce::updateAceEditor(
       session = session,
@@ -22,6 +22,12 @@ editorServer<- function(input, output, session) {
       value = values$graph
     )
   })
-  
+
+  observeEvent(controls$graph,{
+    values$graph <- controls$graph$graph
+  }, ignoreInit = TRUE)
+
+  observeEvent(input$ace, values$ace <- input$ace)
+
   return(values)
 }

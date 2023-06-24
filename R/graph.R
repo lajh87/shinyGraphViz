@@ -7,7 +7,13 @@ graphUI <- function(id) {
 
 graphServer<- function(input, output, session, editor) {
 
-  output$graph <- renderGrViz(grViz(editor$graph))
+  output$graph <- renderGrViz(grViz(editor$ace))
+
+
+  # TODO Add the panzoom functionality.
+
+  # TODO The the autosave functionality.
+
 
 }
 

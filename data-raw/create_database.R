@@ -60,3 +60,53 @@ DBI::dbExecute(
     .sep= "\n"
   )
 )
+DBI::dbExecute(graphviz, "DROP TABLE IF EXISTS graph;")
+DBI::dbExecute(
+  conn = graphviz,
+  statement = glue::glue(
+    "CREATE TABLE graph(",
+    "id INT PRIMARY KEY,",
+    "label TEXT,",
+    "graph MEDIUMBLOB,",
+    "published INT,",
+    "protected INT,",
+    "userid INT",
+    ");",
+    .sep = "\n"
+  )
+)
+g1 <- system.file("examples/siblings.gv", package = "shinyGraphViz") %>%
+  readLines() %>% paste(collapse = "\n") %>%
+  charToRaw() %>%
+  sodium::bin2hex()
+
+DBI::dbExecute(
+  graphviz,
+  glue::glue(
+    "INSERT INTO graph",
+    "VALUES(1, 'siblings', '{{{g1}}}', 1, 1, 1);",
+    .sep = "\n",
+    .open = "{{{",
+    .close = "}}}",
+  )
+)
+
+DBI::dbExecute(graphviz, "DROP TABLE IF EXISTS autosave;")
+DBI::dbExecute(
+  conn = graphviz,
+  statement = glue::glue(
+    "CREATE TABLE autosave(",
+    "selector CHAR(12),",
+    "id INT,",
+    "label TEXT,",
+    "graph MEDIUMBLOB,",
+    "published INT,",
+    "protected INT,",
+    "userid INT",
+    ");",
+    .sep = "\n"
+  )
+)
+
+DBI::dbDisconnect(con)
+DBI::dbDisconnect(graphviz)

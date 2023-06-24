@@ -125,6 +125,7 @@ loginServer<- function(input, output, session, pool, token, parent) {
 
   # Register
   # With link to verify account.
+  return(values)
 
 }
 
