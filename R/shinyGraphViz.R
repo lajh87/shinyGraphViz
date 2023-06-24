@@ -1,4 +1,3 @@
-# 40d41e3b7f73596d
 #'@export
 shinyGraphViz <- function(){
   ui <- fluidPage(
