@@ -27,6 +27,7 @@ shinyGraphViz <- function(){
 
     observeEvent(input$cookies,{
       if(is.null(input$cookies$token)){
+        # If there is no cookie in the browswer then create one and log in database.
         selector <- sodium::random(6) |> sodium::bin2hex()
         validator <- sodium::random(32) |> sodium::bin2hex()
         values$token <- paste(selector, validator, sep  = ":")
@@ -44,8 +45,10 @@ shinyGraphViz <- function(){
           .sep = "\n"
         ))
       } else{
+        # If there is a cookie then store it to be passed to other modules.
         values$token <- input$cookies$token
-        # Check has not expired
+
+        # Check cookie has not expired
         split_token <- stringr::str_split(values$token, ":") %>% unlist()
         expiry_date <- pool %>% dplyr::tbl("token") %>%
           dplyr::collect() %>%
@@ -53,11 +56,13 @@ shinyGraphViz <- function(){
           dplyr::pull(.data$expires)
         if(length(expiry_date) == 0) return(NULL)
         if(as.Date(expiry_date) < Sys.Date()){
+          ## if it has remove cookie from browser and database
           session$sendCustomMessage("cookie-remove", list(name = "token"))
           DBI::dbExecute(pool, glue::glue(
             "DELETE FROM token WHERE selector = '{split_token[1]}';"
             ))
 
+          ## Generate new cookie and send to browser and database.
           selector <- sodium::random(6) |> sodium::bin2hex()
           validator <- sodium::random(32) |> sodium::bin2hex()
           values$token <- paste(selector, validator, sep  = ":")
@@ -74,7 +79,6 @@ shinyGraphViz <- function(){
         }
       }
     }, ignoreInit = FALSE, once = TRUE)
-
 
     pool <- pool::dbPool(
       drv = RMySQL::MySQL(),
