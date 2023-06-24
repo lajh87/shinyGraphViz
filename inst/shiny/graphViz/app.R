@@ -1,0 +1,3 @@
+library(shinyGraphViz)
+shinyGraphViz()
+

@@ -4,7 +4,7 @@ Shiny.addCustomMessageHandler("panzoom_handler", panzoom_zoom);
 Shiny.addCustomMessageHandler("panzoom_reset", panzoom_reset);
 
 function panzoom_zoom(message){
-  let container = document.querySelector('#graph > svg');
+  let container = document.querySelector('#graph-graph > svg');
   let rect = container.getBBox();
   let cx = rect.x + rect.width/2;
   let cy = rect.y + rect.height/2;

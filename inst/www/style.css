@@ -1,0 +1,13 @@
+/* styles.css*/
+.graph{
+  overflow: hidden;
+}
+
+.modal-lg .modal-content .modal-body {
+  width: 100% !important;
+  height: 92vh !important;
+}
+
+.modal-lg{
+  width: 100% !important;
+}

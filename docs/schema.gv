@@ -1,0 +1,67 @@
+digraph schema{
+  
+  graph[splines = compound rankdir = LR layout = fdp]
+  node[shape = none] 
+  edge[style = dotted ]
+  user[
+    label = <<table cellborder = "0">
+    <th><td><b>user</b></td></th>
+    <tr><td port = "id">id</td></tr>
+    <tr><td>email</td></tr>
+    <tr><td>pwd_hash</td></tr>
+    <tr><td>admin</td></tr>
+    <tr><td>verified</td></tr>
+    </table>>
+    ]
+    
+  token[
+    label = <<table cellborder = "0">
+    <th><td><b>token</b></td></th>
+    <tr><td>id</td></tr>
+    <tr><td port = "selector">selector</td></tr>
+    <tr><td>validator_hash</td></tr>
+    <tr><td port = "userid">user.id</td></tr>
+    </table>>
+  ]
+  
+  graph_[
+    label = <
+    <table cellborder = "0">
+    <th><td><b>graph</b></td></th>
+    <tr><td port = "id">id</td></tr>
+    <tr><td>graph</td></tr>
+    <tr><td>label</td></tr>
+    <tr><td>protected</td></tr>
+    <tr><td>published</td></tr>
+    </table>
+    >
+  ]
+  
+  autosave[
+    label = <
+    <table cellborder = "0">
+    <th><td><b>autosave</b></td></th>
+     <tr><td>id</td></tr>
+    <tr><td>graph_cache</td></tr>
+    <tr><td port ="graph_id">graph.id</td></tr>
+    <tr><td port = "token_selector">token.selector</td></tr>
+    </table>
+    >
+  ]
+  
+  permissions[
+    label = <<table cellborder = "0">
+    <th><td><b>permissions</b></td></th>
+    <tr><td port = "user_id">user.id</td></tr>
+    <tr><td port = "graph_id">graph.id</td></tr>
+    <tr><td>read</td></tr>
+    <tr><td>write</td></tr>
+    </table>>
+  ]
+  
+  user:id -> token:userid
+  user:id -> permissions:user_id
+  token:selector -> autosave:token_selector
+  graph_:id -> autosave:graph_id
+  graph_:id -> permissions:graph_id
+}

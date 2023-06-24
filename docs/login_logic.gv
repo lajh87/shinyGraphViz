@@ -1,0 +1,27 @@
+digraph login_logic{
+  
+  graph[
+    rankdir = LR
+    labelloc = t
+    label = "Login Logic"
+  ]
+  node[shape = none]
+  
+  enter_credentials[
+    label = "Enter Username and Password"
+  ]
+  
+  verify_password[
+    label = "Verify Password against Database"
+  ]
+  
+  verified[shape = "diamond", label = "Verified?"]
+  remember_me[shape = "diamond" label = "Remember me checked?"]
+  auth_credential[label = "Associated Token with User Id"]
+  
+  enter_credentials -> verify_password -> verified
+  verified -> login[label = "Yes"]
+  verified:s -> enter_credentials[label = "No"]
+  verified:n -> remember_me[label = "Yes"]
+  remember_me -> auth_credential[label = "Yes"]
+}
