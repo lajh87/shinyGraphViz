@@ -1,7 +1,60 @@
 graphUI <- function(id) {
   ns <- NS(id)
   tagList(
-  grVizOutput(ns("graph"))
+  div(class = "graph", grVizOutput(ns("graph"), height = "90vh")),
+  tags$script(
+    HTML(paste0(
+      'pz = panzoom($("#graph-graph")[0], {
+            bounds: true,
+            zoomDoubleClickSpeed: 1
+        }); pz.zoomAbs(0, 0, 0.7);'
+    ))
+  ),
+  tags$div(
+    style = "position: absolute; right: 30px; top: 5px;",
+    downloadButton(
+      outputId = ns("download_plot"),
+      label = NULL,
+      icon = icon("download")
+    )
+  ),
+  tags$div(
+    style = "position: absolute; right: 30px; top: 50px;",
+    actionButton(
+      inputId = ns("fullscreen"),
+      label = NULL,
+      icon = icon("expand")
+    )
+  ),
+
+  tags$div(
+    style = "position: absolute; right: 30px; bottom: 79px;",
+    actionButton(
+      inputId = ns("zoomin"),
+      label = NULL,
+      icon = icon("plus")
+    )
+  ),
+  tags$div(
+    style = "position: absolute; right: 30px; bottom: 42px;",
+    actionButton(
+      inputId = ns("reset"),
+      label = NULL,
+      icon = icon("arrows-alt")
+    )
+  ),
+  tags$div(
+    style = "position: absolute; right: 30px; bottom: 5px;",
+    actionButton(
+      inputId = ns("zoomout"),
+      label = NULL,
+      icon = icon("minus")
+    )
+  ),
+  tags$div(
+    style = "position: absolute; right: 100px; bottom: 5px;",
+    tags$em(tags$a(href = "", "Defence Economics"), "| Graphviz")
+    )
   )
 }
 
@@ -9,10 +62,36 @@ graphServer<- function(input, output, session, editor) {
 
   output$graph <- renderGrViz(grViz(editor$ace))
 
+  observeEvent(input$zoomin,{
+    session$sendCustomMessage("panzoom_handler","zoomIn")
+  }, ignoreInit = TRUE)
+  observeEvent(input$zoomout,{
+    session$sendCustomMessage("panzoom_handler","zoomOut")
+  }, ignoreInit = TRUE)
+  observeEvent(input$reset,{
+    session$sendCustomMessage("panzoom_reset","reset")
+  }, ignoreInit = TRUE)
 
-  # TODO Add the panzoom functionality.
+  observeEvent(input$fullscreen,{
+    showModal(
+      modalDialog(
+        easyClose = TRUE,
+        size = "l",
+        DiagrammeR::grViz(editor$ace, height = "100%", width = "100%")
+      )
+    )
+  })
 
-  # TODO The the autosave functionality.
+  output$download_plot <- downloadHandler(
+    filename = function(){
+      paste0(Sys.time(),"plot.svg")
+    }, content = function(file){
+      gv <- DiagrammeR::grViz(editor$ace, height = "100%", width = "100%")
+      svg <- DiagrammeRsvg::export_svg(gv)
+      write(svg, file)
+    }
+  )
+
 
 
 }

@@ -5,6 +5,9 @@ shinyGraphViz <- function(){
     shinyjs::useShinyjs(),
     includeScript(system.file("www/js.cookie.min.js", package = "shinyGraphViz")),
     includeScript(system.file("www/shiny-cookies.js", package = "shinyGraphViz")),
+    includeScript(system.file("www/panzoom.min.js", package = "shinyGraphViz")),
+    includeScript(system.file("www/panzoom-shiny.js", package = "shinyGraphViz")),
+    includeCSS(system.file("www/style.css", package = "shinyGraphViz")),
     fluidRow(
       column(width = 12,
              div(style = "display: inline-block", loginUI("login")),
@@ -114,7 +117,6 @@ shinyGraphViz <- function(){
         editor = editor
         )
     })
-
 
   }
 

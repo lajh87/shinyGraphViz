@@ -4,7 +4,8 @@ editorUI <- function(id) {
     shinyAce::aceEditor(
       outputId = ns("ace"),
       value = "",
-      mode = "dot"
+      mode = "dot",
+      height = "85vh"
     )
   )
 }

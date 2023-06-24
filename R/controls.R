@@ -109,7 +109,9 @@ controlsServer <- function(input, output, session, pool, token, login, editor) {
 
   }, ignoreInit = TRUE)
 
-  output$filename <- renderText(values$graph$label)
+  output$filename <- renderText({
+    ifelse(values$editor$ace == values$graph$graph, values$graph$label, paste0(values$graph$label, "*"))
+  })
 
   observeEvent(input$new, values$graph <- new_graph())
   observeEvent(input$load, load_modal(input, output, session, pool, values))
@@ -130,6 +132,7 @@ new_graph <- function(){
     userid = 1
   )
 }
+
 load_modal <- function(input, output, session, pool, values){
   ns <- session$ns
 
@@ -169,7 +172,17 @@ load_modal <- function(input, output, session, pool, values){
     )
   )
 
+  observe({
+    if(is.null(input$graphs_tbl_rows_selected)){
+      shinyjs::disable(id = "load_confirm")
+    } else{
+      shinyjs::enable(id = "load_confirm")
+    }
+
+    })
+
   observeEvent(input$load_confirm,{
+    if(is.null(input$graphs_tbl_rows_selected)) return(NULL)
     values$graph <- values$graphs %>%
       dplyr::slice(input$graphs_tbl_rows_selected) %>%
       dplyr::mutate(graph = sodium::hex2bin(graph) %>% rawToChar())
