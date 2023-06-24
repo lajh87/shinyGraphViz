@@ -10,24 +10,65 @@ loginUI <- function(id) {
   )
 }
 
-loginServer<- function(input, output, session, pool) {
+loginServer<- function(input, output, session, pool, token, parent) {
 
   ns <- session$ns
 
-  values <- reactiveValues()
+  values <- reactiveValues(logged_in = FALSE)
 
   # Dynamic Login Button ----
   output$dynamic_login <- renderUI({
-    tagList(
-      actionLink(ns("login"), "Login"),
-      tags$br(),
-      actionLink(ns("register"), "Register")
-    )
+    if(!values$logged_in){
+      tagList(
+        actionLink(ns("login"), "Login"),
+        tags$br(),
+        actionLink(ns("register"), "Register")
+      )
+    } else{
+      tagList(
+        "You are logged in.",
+        tags$br(),
+        actionLink(ns("logout"), "Logout")
+      )
+    }
+
   })
 
-  observeEvent(input$login, login_modal(ns))
+  # Login using token ----
+  # Check whether token is valid and has userid associated.
+  observeEvent(token,{
+    split_token <- stringr::str_split(token, ":") %>% unlist()
+    values$selector <- split_token[1]
+    values$validator <- split_token[2]
+    values$hashed_validator <- sodium::hex2bin(split_token[2]) %>%
+      sodium::sha256() %>%
+      sodium::bin2hex()
 
-  # Login ----
+    db_token <- pool %>% dplyr::tbl("token") %>%
+      dplyr::filter(.data$selector == !!values$selector) %>%
+      dplyr::collect()
+
+    if(!nrow(db_token)) return(NULL)
+
+    if(db_token$hashed_validator == values$hashed_validator){
+      # TODO add expiry.
+
+        values$user <- pool %>%
+          dplyr::tbl("user") %>%
+          dplyr::filter(.data$userid == !!db_token$userid) %>%
+          dplyr::collect()
+
+      if(nrow(values$user)>0){
+        values$logged_in <- TRUE
+      }
+
+    } else{
+      parent$sendCustomMessage("cookie-remove", list(name = "token"))
+    }
+  })
+
+  # Login through button ----
+  observeEvent(input$login, login_modal(ns))
   observeEvent(input$confirm,{
     email <- input$email
     pw <- input$password
@@ -45,18 +86,47 @@ loginServer<- function(input, output, session, pool) {
       values$user <- user
       values$logged_in <- TRUE
       removeModal()
-      shinyjs::hide("error")
-      updateActionButton(session, "dropdown", icon = icon("user", class = "fa-solid"))
+
+      if(input$remember){
+        DBI::dbExecute(pool, glue::glue(
+          "UPDATE token",
+          "SET userid = {user$userid}",
+          "WHERE selector = '{values$selector}';",
+          .sep = "\n"
+        ))
+      }
     } else{
       shinyjs::show("error")
     }
   }, ignoreInit = TRUE)
 
+  observeEvent(values$logged_in,{
+    if(values$logged_in){
+      shinyjs::hide("error")
+      updateActionButton(session, "dropdown", icon = icon("user", class = "fa-solid"))
+    }
+
+  })
+
+  # Logout ----
+  observeEvent(input$logout,{
+    values$logged_in <- FALSE
+    values$user <- NULL
+    updateActionButton(session, "dropdown", icon = icon("user"))
+
+    DBI::dbExecute(pool, glue::glue(
+      "UPDATE token",
+      "SET userid = NULL",
+      "WHERE selector = '{values$selector}';",
+      .sep = "\n"
+    ))
+
+  })
+
   # Register
   # With link to verify account.
 
 }
-
 
 login_modal <- function(ns){
   showModal(
@@ -77,8 +147,6 @@ login_modal <- function(ns){
   )
 }
 
-
-
 register_modal <- function(){
   showModal(
     modalDialog(
@@ -89,7 +157,6 @@ register_modal <- function(){
       footer = tagList(
         actionButton("register_confirm", "Confirm"),
         modalButton("Close")
-
       )
     )
   )

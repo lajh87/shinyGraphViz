@@ -52,7 +52,7 @@ DBI::dbExecute(
   conn = graphviz,
   statement = glue::glue(
     "CREATE TABLE token(",
-    "selector CHAR(8),",
+    "selector CHAR(12),",
     "hashed_validator CHAR(64),",
     "userid INT",
     ");",

@@ -16,7 +16,8 @@ server <- function(input, output, session) {
   # save
   observeEvent(input$save, {
     msg <- list(
-      name = "name", value = input$name_set
+      name = "name",
+      value = input$name_set
     )
 
     if(input$name_set != "")
