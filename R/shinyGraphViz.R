@@ -40,11 +40,38 @@ shinyGraphViz <- function(){
         session$sendCustomMessage("cookie-set", msg)
         DBI::dbExecute(pool, glue::glue(
           "INSERT INTO token",
-          "VALUES('{selector}', '{hashed_validator}', '0')",
+          "VALUES('{selector}', '{hashed_validator}', '0' {Sys.Date()+90})",
           .sep = "\n"
         ))
       } else{
         values$token <- input$cookies$token
+        # Check has not expired
+        split_token <- stringr::str_split(values$token, ":") %>% unlist()
+        expiry_date <- pool %>% dplyr::tbl("token") %>%
+          dplyr::collect() %>%
+          dplyr::filter(.data$selector == split_token[1]) %>%
+          dplyr::pull(.data$expires)
+        if(length(expiry_date) == 0) return(NULL)
+        if(as.Date(expiry_date) < Sys.Date()){
+          session$sendCustomMessage("cookie-remove", list(name = "token"))
+          DBI::dbExecute(pool, glue::glue(
+            "DELETE FROM token WHERE selector = '{split_token[1]}';"
+            ))
+
+          selector <- sodium::random(6) |> sodium::bin2hex()
+          validator <- sodium::random(32) |> sodium::bin2hex()
+          values$token <- paste(selector, validator, sep  = ":")
+          msg <- list(
+            name = "token",
+            value = values$token
+          )
+          session$sendCustomMessage("cookie-set", msg)
+          DBI::dbExecute(pool, glue::glue(
+            "INSERT INTO token",
+            "VALUES('{selector}', '{hashed_validator}', '0' {Sys.Date()+90})",
+            .sep = "\n"
+          ))
+        }
       }
     }, ignoreInit = FALSE, once = TRUE)
 

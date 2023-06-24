@@ -54,7 +54,8 @@ DBI::dbExecute(
     "CREATE TABLE token(",
     "selector CHAR(12),",
     "hashed_validator CHAR(64),",
-    "userid INT",
+    "userid INT,",
+    "expires DATE",
     ");",
     .sep= "\n"
   )
