@@ -46,7 +46,6 @@ DBI::dbExecute(graphviz, glue::glue(
 "VALUES(1, 'root', '{hashed}', 1);",
 .sep = "\n"
 ))
-
 # Create Token Table
 DBI::dbExecute(graphviz, "DROP TABLE IF EXISTS token;")
 DBI::dbExecute(

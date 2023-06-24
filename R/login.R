@@ -9,9 +9,11 @@ loginUI <- function(id) {
   )
 }
 
-loginServer<- function(input, output, session) {
+loginServer<- function(input, output, session, pool) {
 
   ns <- session$ns
+
+  values <- reactiveValues()
 
   # Dynamic Login Button ----
   output$dynamic_login <- renderUI({
@@ -22,11 +24,39 @@ loginServer<- function(input, output, session) {
     )
   })
 
-  observeEvent(input$login, login_modal())
-  observeEvent(input$register, register_modal())
+  observeEvent(input$login, login_modal(ns))
 
   # Login ----
-  # "root", "4ae5ebd11f051216"
+
+  observeEvent(input$confirm,{
+    email <- input$email
+    pw <- input$password
+    user <- pool %>% dplyr::tbl("user") %>%
+      dplyr::filter(username == email) %>%
+      dplyr::collect()
+
+    if(length(user$hashed_password)>0 && nchar(user$hashed_password)==101){
+      verified <- sodium::password_verify(user$hashed_password, pw)
+    } else{
+      verified <- FALSE
+    }
+
+    if(verified){
+      values$user <- user
+      values$logged_in <- TRUE
+      removeModal()
+      shinyjs::hide("error")
+    } else{
+      shinyjs::show("error")
+    }
+
+
+
+
+
+
+
+  }, ignoreInit = TRUE)
 
   # Register
   # With link to verify account.
@@ -34,23 +64,26 @@ loginServer<- function(input, output, session) {
 }
 
 
-login_modal <- function(){
+login_modal <- function(ns){
   showModal(
     modalDialog(
       title = "Login",
       size = "s",
-      textInput("email", "Enter Email Address"),
-      passwordInput("password", "Enter Password"),
-      checkboxInput("rememberme", "Remember Me?"),
+      textInput(ns("email"), "Enter Email Address"),
+      passwordInput(ns("password"), "Enter Password"),
+      checkboxInput(ns("remember"), "Remember Me?"),
+      div(id = ns("error"), style = "color:red; display: none;", "Incorrect Username or Password"),
       footer = tagList(
-        tags$p(align = "left", actionLink("forgot_pw", "Forgot Password?")),
-        actionButton("login_confirm", "Confirm"),
+        tags$p(align = "left", actionLink(ns("forgot_pw"), "Forgot Password?")),
+        actionButton(ns("confirm"), "Confirm"),
         modalButton("Close")
 
       )
     )
   )
 }
+
+
 
 register_modal <- function(){
   showModal(
