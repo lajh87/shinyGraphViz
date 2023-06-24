@@ -25,52 +25,10 @@ shinyGraphViz <- function(){
 
   server <- function(input, output, session) {
 
+    # Reactive values update based on change to the application
     values <- reactiveValues()
 
-    observeEvent(input$cookies, {
-
-      if(is.null(input$cookies$token)){
-        # If there is no cookie in the browswer then create one and log in database.
-        selector <- sodium::random(6) |> sodium::bin2hex()
-        validator <- sodium::random(32) |> sodium::bin2hex()
-        values$token <- paste(selector, validator, sep  = ":")
-        hashed_validator <- sodium::hex2bin(validator) %>%
-          sodium::sha256() %>%
-          sodium::bin2hex()
-        msg <- list(
-          name = "token",
-          value = values$token
-        )
-        session$sendCustomMessage("cookie-set", msg)
-        DBI::dbExecute(pool, glue::glue(
-          "INSERT INTO token",
-          "VALUES('{selector}', '{hashed_validator}', '0', '{Sys.Date()+90}')",
-          .sep = "\n"
-        ))
-      } else{
-        values$token <- input$cookies$token
-        split_token <- stringr::str_split(values$token, ":") %>% unlist()
-
-        expiry_date <- pool %>% dplyr::tbl("token") %>%
-          dplyr::collect() %>%
-          dplyr::filter(.data$selector == split_token[1]) %>%
-          dplyr::pull(.data$expires)
-
-        if(length(expiry_date) == 0){
-          session$sendCustomMessage("cookie-remove", list(name = "token"))
-        } else{
-          if(as.Date(expiry_date) < Sys.Date()){
-            ## if it has remove cookie from browser and database
-            session$sendCustomMessage("cookie-remove", list(name = "token"))
-            DBI::dbExecute(pool, glue::glue(
-              "DELETE FROM token WHERE selector = '{split_token[1]}';"
-            ))
-          }
-        }
-      }
-
-    }, ignoreInit = FALSE, once = TRUE)
-
+    # Use a database pool instance to enable multiple connections.
     pool <- pool::dbPool(
       drv = RMySQL::MySQL(),
       user = "lheley",
@@ -82,6 +40,36 @@ shinyGraphViz <- function(){
     onStop(function() {
       pool::poolClose(pool)
     })
+
+    # If there is no token then create a new one and save info in database.
+    # Otherwise use existing token after checking whether it is valid
+    observeEvent(input$cookies, {
+
+      if(is.null(input$cookies$token)){
+        values$token <- create_new_token(pool, session)
+      } else{
+        values$token <- input$cookies$token
+
+        expiry_date <- pool %>% dplyr::tbl("token") %>%
+          dplyr::collect() %>%
+          dplyr::filter(.data$selector == split_token(values$token)[1]) %>%
+          dplyr::pull(.data$expires)
+
+        if(length(expiry_date) == 0){
+          session$sendCustomMessage("cookie-remove", list(name = "token"))
+          values$token <- create_new_token(pool, session)
+        } else{
+          if(as.Date(expiry_date) < Sys.Date()){
+            session$sendCustomMessage("cookie-remove", list(name = "token"))
+            DBI::dbExecute(pool, glue::glue(
+              "DELETE FROM token WHERE selector = '{split_token[1]}';"
+            ))
+            values$token <- create_new_token(pool)
+          }
+        }
+      }
+
+    }, ignoreInit = FALSE, once = TRUE)
 
     # wrapped the modules in an observer so can use req(values$token) preventing
     # null value being passed to login module.
