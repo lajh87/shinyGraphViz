@@ -8,57 +8,59 @@ digraph G {
   edge [];
 
   splines=false;
-  
+
   load [
     label = "Load Site";
     shape = rect;
   ];
-  
+
   has_token [
     label = "Has Token?";
     shape = diamond;
   ];
-  
+
   valid_token [
     label = "Valid Token?";
     shape = diamond;
   ];
-  
+
   user_id [
     label = "Token associated\nwith user id?";
     shape = diamond;
   ];
-  
+
   create_token[
     label = "Create Token",
     shape = rectangle
   ]
-  
+
   destroy_token[
     label = "Destroy Token",
     shape = rectangle
   ]
-  
+
   login[
     label = login
     shape = rectangle
   ]
-  
+
   load_cache[
     label = "Load Cache"
     shape = rectangle
   ]
-  
+
   load -> has_token
   has_token -> valid_token[label = "Yes"]
   has_token:s -> create_token:n[label = "No"]
-  valid_token -> user_id[label = "Yes"]
+  valid_token:e -> user_id:w[label = "Yes"]
   valid_token:s -> destroy_token:n[label = "No"]
   user_id -> login[label = "Yes"]
-  
-  valid_token -> load_cache[label = "Yes"]
-  
+  destroy_token:w -> create_token:e
+
+  valid_token:e -> load_cache:w[label = "Yes"]
+
   {rank = same; has_token; create_token;}
   {rank = same; valid_token; destroy_token;}
- 
+  {rank = same; login; load_cache;}
+
 }

@@ -30,3 +30,12 @@ The app uses panzoom javascript library to move and zoom into the graph. More in
 
 Zoom in buttons follow the approach in anvaka/panzoom. 
 
+
+## Acknowledgements
+
+DiagrammeR
+visjs
+panzoom
+cookies-js (Klaus Hartle and Fagner Brack)
+John Coene, Javascript for R
+
