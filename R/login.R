@@ -2,6 +2,7 @@ loginUI <- function(id) {
   ns <- NS(id)
   tagList(
     shinyWidgets::dropdownButton(
+      inputId = ns("dropdown"),
       circle = FALSE,
       icon = icon("user"),
       uiOutput(ns("dynamic_login"))
@@ -27,7 +28,6 @@ loginServer<- function(input, output, session, pool) {
   observeEvent(input$login, login_modal(ns))
 
   # Login ----
-
   observeEvent(input$confirm,{
     email <- input$email
     pw <- input$password
@@ -46,16 +46,10 @@ loginServer<- function(input, output, session, pool) {
       values$logged_in <- TRUE
       removeModal()
       shinyjs::hide("error")
+      updateActionButton(session, "dropdown", icon = icon("user", class = "fa-solid"))
     } else{
       shinyjs::show("error")
     }
-
-
-
-
-
-
-
   }, ignoreInit = TRUE)
 
   # Register
