@@ -1,4 +1,5 @@
 #'@export
+#'@import shiny
 shinyGraphViz <- function(){
   ui <- fluidPage(
     shinyjs::useShinyjs(),

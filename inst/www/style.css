@@ -6,11 +6,12 @@
 .modal-lg .modal-content .modal-body {
   width: 100% !important;
   height: 92vh !important;
+  overflow: hidden;
 }
 
 .modal-lg{
   width: 100% !important;
-  overflow: hidden;
+
   margin:0 !important;
   padding: 0 !important;
 }
