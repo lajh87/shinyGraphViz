@@ -4,7 +4,7 @@ graphUI <- function(id) {
   div(class = "graph", grVizOutput(ns("graph"), height = "90vh")),
   tags$script(
     HTML(paste0(
-      'pz = panzoom($("#graph-graph")[0], {
+      'pz = panzoom($("#', ns('graph'),'")[0], {
             bounds: true,
             zoomDoubleClickSpeed: 1
         }); pz.zoomAbs(0, 0, 0.7);'
@@ -60,6 +60,8 @@ graphUI <- function(id) {
 
 graphServer<- function(input, output, session, editor) {
 
+  ns <- session$ns
+
   output$graph <- renderGrViz(grViz(editor$ace))
 
   observeEvent(input$zoomin,{
@@ -77,9 +79,21 @@ graphServer<- function(input, output, session, editor) {
       modalDialog(
         easyClose = TRUE,
         size = "l",
-        DiagrammeR::grViz(editor$ace, height = "100%", width = "100%")
+        grVizOutput(ns("fullscreen_graph"), width = "100%", height = "100%"),
+        tags$script(
+          HTML(paste0(
+            'pz2 = panzoom($("#', ns('fullscreen_graph'),'")[0], {
+            bounds: true,
+            zoomDoubleClickSpeed: 1
+        }); pz2.zoomAbs(0, 0, 1);'
+          ))
+        )
       )
     )
+  })
+
+  output$fullscreen_graph <- renderGrViz({
+    DiagrammeR::grViz(editor$ace, height = "100%", width = "100%")
   })
 
   output$download_plot <- downloadHandler(

@@ -10,4 +10,9 @@
 
 .modal-lg{
   width: 100% !important;
+  overflow: hidden;
+  margin:0 !important;
+  padding: 0 !important;
 }
+
+
